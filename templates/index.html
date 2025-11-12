@@ -1,0 +1,1569 @@
+{% extends "base.html" %}
+{% block title %}Servis Takip{% endblock %}
+{% block head %}
+    {{ super() }}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-slate-100 text-slate-900">
+    <header class="bg-white/95 text-slate-900 shadow-sm ring-1 ring-slate-200 backdrop-blur">
+        <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-5">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-rose-600 text-base font-semibold text-white shadow-sm">
+                    TE
+                </div>
+                <div>
+                    <p class="text-lg font-semibold">Teknik Elektronik</p>
+                    <p class="text-xs text-slate-500">Mahmut Gazihan Arslan</p>
+                </div>
+            </div>
+            <div class="ml-auto flex items-center gap-3 text-xs sm:text-sm text-slate-500">
+                <span class="inline-flex items-center gap-3 rounded-full border border-slate-200 px-3 py-1">
+                    <span class="text-base">🕐</span>
+                    <span class="flex flex-col leading-tight text-left">
+                        <span id="header-clock" class="text-sm font-semibold text-slate-700">--:--:--</span>
+                        <span id="header-date" class="text-[11px] text-slate-400">--/--/----</span>
+                    </span>
+                </span>
+                <form action="{{ url_for('logout') }}" method="post">
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600">
+                        <span class="text-sm">↩︎</span>
+                        <span>Çıkış</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="border-t border-slate-200 bg-slate-50">
+            <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-2 px-4 py-3">
+                <button id="open-customer-modal" type="button" class="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:text-rose-600 lg:px-4 lg:text-sm">
+                    <span class="text-sm text-rose-500">➕</span>
+                    <span>Müşteri Ekle</span>
+                </button>
+                <button class="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:text-rose-600 lg:px-4 lg:text-sm">
+                    <span class="text-sm text-emerald-500">🏬</span>
+                    <span>Bayi K. Sistemi</span>
+                </button>
+                <button id="open-technician-modal" type="button" class="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:text-rose-600 lg:px-4 lg:text-sm">
+                    <span class="text-sm text-indigo-500">🛠️</span>
+                    <span>Teknisyen Ekleme</span>
+                </button>
+                <a href="{{ url_for('montaj_kapama') }}" class="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:text-rose-600 lg:px-4 lg:text-sm">
+                    <span class="text-sm text-slate-500">📦</span>
+                    <span>Montaj Kapama</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        <section class="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/60">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-800">Atanan İş Emirleri</h2>
+                    <p class="text-xs text-slate-500">Servis kayıtlarını görüntüleyin; satıra çift tıklayarak detaylarını düzenleyin.</p>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-slate-600">
+                    <span class="font-medium text-slate-700">Sayfa</span>
+                    <span>1 / 1</span>
+                    <span class="text-slate-400">•</span>
+                    <span><span id="record-count">0</span> kayıt</span>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-xl border border-slate-200">
+                <div class="overflow-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">
+                                    <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                                </th>
+                                <th scope="col" class="px-4 py-3">İşemri No</th>
+                                <th scope="col" class="px-4 py-3">Öncelik</th>
+                                <th scope="col" class="px-4 py-3">Eklenme Tarihi</th>
+                                <th scope="col" class="px-4 py-3">İsim Soyisim</th>
+                                <th scope="col" class="px-4 py-3">Model</th>
+                                <th scope="col" class="px-4 py-3">Telefon</th>
+                                <th scope="col" class="px-4 py-3">Servis Tipi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white" id="assigned-records" data-state="message">
+                            <tr>
+                                <td colspan="8" class="px-4 py-6 text-center text-sm text-slate-400">Kayıtlar yükleniyor...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/60">
+            <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h3 class="text-base font-semibold text-slate-800">İş Emri Detayları</h3>
+                    <p class="text-xs text-slate-500">Atanan kayıt için temel bilgileri düzenleyin.</p>
+                    <div id="detail-rnu" class="mt-3 hidden inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                        <span class="text-[10px] uppercase tracking-wide text-slate-400">RNU</span>
+                        <span id="detail-rnu-value" class="text-xs text-slate-700"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <label class="flex flex-col gap-1 text-sm sm:col-span-3 md:col-span-1">
+                        <span class="font-medium text-slate-600">İsim Soyisim</span>
+                        <input id="detail-name" type="text" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Seçim ile dolacak" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm sm:col-span-3 md:col-span-1">
+                        <span class="font-medium text-slate-600">Telefon</span>
+                        <input id="detail-phone" type="tel" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Seçim ile dolacak" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm sm:col-span-3 md:col-span-1">
+                        <span class="font-medium text-slate-600">Model</span>
+                        <input id="detail-model" type="text" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Seçim ile dolacak" />
+                    </label>
+                    <div class="sm:col-span-3">
+                        <label class="flex flex-col gap-1 text-sm">
+                            <span class="font-medium text-slate-600">Adres</span>
+                            <textarea id="detail-address" rows="4" class="w-full rounded border border-slate-300 px-3 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Adres bilgisi"></textarea>
+                        </label>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <span class="block text-sm font-medium text-slate-600">Resimler</span>
+                        <p id="detail-media-meta" class="mt-1 hidden text-xs text-slate-500"></p>
+                        <div id="invoice-preview" class="mt-2 flex flex-wrap items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-500">
+                            <span>Medya bulunamadı.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="open-invoice-modal" type="button" class="inline-flex items-center justify-center gap-2 rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
+                        <span class="text-base">🧾</span>
+                        <span>Fatura Yükle</span>
+                    </button>
+                    <button id="detail-delete-button" type="button" class="inline-flex items-center justify-center gap-2 rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
+                        <span class="text-base">🗑️</span>
+                        <span>Kaydı Sil</span>
+                    </button>
+                    <button id="detail-download-button" type="button" class="inline-flex items-center justify-center gap-2 rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
+                        <span class="text-base">⬇️</span>
+                        <span>Resimleri İndir</span>
+                    </button>
+                </div>
+                <button id="detail-save-button" class="inline-flex items-center gap-2 rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500">
+                    Kaydet
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <div id="customer-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div id="customer-modal-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div class="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-800">Yeni İş Emri</h2>
+                    <p class="text-xs text-slate-500">Müşteri kabul formunu doldurun. İşemri numarası otomatik atanır.</p>
+                </div>
+                <button type="button" class="text-slate-400 transition hover:text-rose-500" data-close-modal>
+                    ✕
+                </button>
+            </div>
+            <form id="customer-modal-form" class="mt-6 space-y-4">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <input id="modal-isemri" name="isemri" type="hidden" />
+                    <label class="flex flex-col gap-1 text-sm">
+                        <span class="font-medium text-slate-600">Öncelik</span>
+                        <select id="modal-priority" name="priority" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200">
+                            <option value="Yüksek">Yüksek</option>
+                            <option value="Orta">Orta</option>
+                            <option value="Düşük">Düşük</option>
+                        </select>
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                        <span class="font-medium text-slate-600">RNU No (varsa)</span>
+                        <input id="modal-rnu" name="rnu" type="text" placeholder="Opsiyonel" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+                        <span class="font-medium text-slate-600">İsim Soyisim</span>
+                        <input id="modal-name" name="name" type="text" required placeholder="Müşteri adı" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                        <span class="font-medium text-slate-600">Model</span>
+                        <input id="modal-model" name="model" type="text" required placeholder="Ürün modeli" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm">
+                        <span class="font-medium text-slate-600">Telefon</span>
+                        <input id="modal-phone" name="phone" type="tel" required placeholder="05xx xxx xx xx" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+                        <span class="font-medium text-slate-600">Adres</span>
+                        <textarea id="modal-address" name="address" rows="3" required placeholder="Adres bilgisi" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200"></textarea>
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm sm:col-span-2">
+                        <span class="font-medium text-slate-600">Servis Tipi</span>
+                        <select id="modal-service" name="service" required class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200">
+                            <option>Seçiniz.</option>
+                            <option value="TV Kurulum">TV Kurulum</option>
+                            <option value="TV Arıza">TV Arıza</option>
+                            <option value="Robot Kurulum">Robot Kurulum</option>
+                            <option value="Robot Arıza">Robot Arıza</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600" data-close-modal>İptal</button>
+                    <button type="submit" class="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="technician-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div id="technician-modal-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div class="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-800">Teknisyen Ekle</h2>
+                    <p class="text-xs text-slate-500">Yeni teknisyen bilgilerini girin. Kullanıcı adı benzersiz olmalıdır.</p>
+                </div>
+                <button type="button" class="text-slate-400 transition hover:text-rose-500" data-close-technician-modal>
+                    ✕
+                </button>
+            </div>
+            <form id="technician-modal-form" class="mt-6 space-y-4">
+                <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-600">Teknisyen Adı Soyadı</span>
+                    <input id="technician-name" name="name" type="text" required placeholder="Ad Soyad" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                </label>
+                <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-600">Kullanıcı Adı</span>
+                    <input id="technician-username" name="username" type="text" required placeholder="Kullanıcı adı" class="w-full rounded border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                </label>
+                <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-600">Şifre</span>
+                    <input id="technician-password" name="password" type="password" required placeholder="En az 6 karakter" class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                </label>
+                <label class="flex flex-col gap-1 text-sm">
+                    <span class="font-medium text-slate-600">Level</span>
+                    <select id="technician-level" name="level" required class="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200">
+                        <option value="5">Level 5 - Uzman</option>
+                        <option value="4">Level 4 - Kıdemli</option>
+                        <option value="3">Level 3 - Standart</option>
+                    </select>
+                </label>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-rose-300 hover:text-rose-600" data-close-technician-modal>Vazgeç</button>
+                    <button type="submit" class="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="invoice-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div id="invoice-modal-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div class="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-800">Fatura Yükle</h2>
+                    <p id="invoice-order-info" class="text-xs text-slate-500">Önce listeden bir iş seçin.</p>
+                </div>
+                <button type="button" class="text-slate-400 transition hover:text-rose-500" data-close-invoice>
+                    ✕
+                </button>
+            </div>
+            <form id="invoice-modal-form" class="mt-6 space-y-4">
+                <label class="flex flex-col gap-2 text-sm">
+                    <span class="font-medium text-slate-600">Fatura Dosyası</span>
+                    <input id="invoice-file" type="file" accept="image/*,application/pdf" class="block w-full cursor-pointer rounded border border-dashed border-rose-300 bg-rose-50/40 px-4 py-4 text-sm text-rose-700 transition hover:border-rose-400 hover:bg-rose-50 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                    <p class="text-xs text-slate-500">PDF, JPG veya PNG • maksimum 5MB</p>
+                </label>
+                <div class="flex items-center justify-end gap-3">
+                    <button type="button" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600" data-close-invoice>İptal</button>
+                    <button type="submit" class="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500">Fatura Yükle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="invoice-viewer-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div id="invoice-viewer-overlay" class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+        <div class="relative z-10 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-800">Fatura Önizleme</h2>
+                    <p id="invoice-viewer-info" class="text-xs text-slate-500"></p>
+                </div>
+                <button type="button" class="text-slate-400 transition hover:text-rose-500" data-close-invoice-viewer>
+                    ✕
+                </button>
+            </div>
+            <div id="invoice-viewer-content" class="mt-4 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-slate-50"></div>
+            <div class="mt-4 flex justify-end gap-3">
+                <a id="invoice-viewer-download" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600">İndir</a>
+                <button type="button" class="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500" data-close-invoice-viewer>Tamam</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var tableBody = document.getElementById('assigned-records');
+    var countEl = document.getElementById('record-count');
+    var clockEl = document.getElementById('header-clock');
+    var dateEl = document.getElementById('header-date');
+    var customerModal = document.getElementById('customer-modal');
+    var customerModalOverlay = document.getElementById('customer-modal-overlay');
+    var openCustomerModalBtn = document.getElementById('open-customer-modal');
+    var customerCloseButtons = document.querySelectorAll('[data-close-modal]');
+    var customerForm = document.getElementById('customer-modal-form');
+    var modalIsEmri = document.getElementById('modal-isemri');
+    var modalPriority = document.getElementById('modal-priority');
+    var modalService = document.getElementById('modal-service');
+    var modalName = document.getElementById('modal-name');
+
+    var invoiceModal = document.getElementById('invoice-modal');
+    var invoiceOverlay = document.getElementById('invoice-modal-overlay');
+    var openInvoiceBtn = document.getElementById('open-invoice-modal');
+    var invoiceCloseButtons = document.querySelectorAll('[data-close-invoice]');
+    var invoiceForm = document.getElementById('invoice-modal-form');
+    var invoiceFileInput = document.getElementById('invoice-file');
+    var invoiceOrderInfo = document.getElementById('invoice-order-info');
+    var invoicePreview = document.getElementById('invoice-preview');
+    var invoiceViewerModal = document.getElementById('invoice-viewer-modal');
+    var invoiceViewerOverlay = document.getElementById('invoice-viewer-overlay');
+    var invoiceViewerContent = document.getElementById('invoice-viewer-content');
+    var invoiceViewerInfo = document.getElementById('invoice-viewer-info');
+    var invoiceViewerDownload = document.getElementById('invoice-viewer-download');
+    var invoiceViewerCloseButtons = document.querySelectorAll('[data-close-invoice-viewer]');
+    var detailNameInput = document.getElementById('detail-name');
+    var detailModelInput = document.getElementById('detail-model');
+    var detailPhoneInput = document.getElementById('detail-phone');
+    var detailAddressInput = document.getElementById('detail-address');
+    var detailSaveButton = document.getElementById('detail-save-button');
+    var detailDeleteButton = document.getElementById('detail-delete-button');
+    var detailDownloadButton = document.getElementById('detail-download-button');
+    var detailRnuBadge = document.getElementById('detail-rnu');
+    var detailRnuValue = document.getElementById('detail-rnu-value');
+    var detailMediaMeta = document.getElementById('detail-media-meta');
+    var technicianModal = document.getElementById('technician-modal');
+    var technicianModalOverlay = document.getElementById('technician-modal-overlay');
+    var openTechnicianModalBtn = document.getElementById('open-technician-modal');
+    var technicianCloseButtons = document.querySelectorAll('[data-close-technician-modal]');
+    var technicianForm = document.getElementById('technician-modal-form');
+    var technicianNameInput = document.getElementById('technician-name');
+    var technicianUsernameInput = document.getElementById('technician-username');
+    var technicianLevelSelect = document.getElementById('technician-level');
+
+    var selectedOrder = null;
+    var selectedRowElement = null;
+    var IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif'];
+    var ordersCache = {};
+
+    updateDetailPanel(null);
+    updateInvoiceButton(null);
+    updateInvoicePreview(null);
+    if (detailDownloadButton) {
+        detailDownloadButton.disabled = true;
+        detailDownloadButton.classList.add('opacity-70');
+    }
+
+    function escapeHtml(value) {
+        return (value || '').replace(/[&<>"']/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char];
+        });
+    }
+
+    function normalizePriorityValue(priority) {
+        if (!priority) {
+            return '';
+        }
+        try {
+            return priority.toLocaleUpperCase('tr-TR');
+        } catch (err) {
+            return priority.toUpperCase();
+        }
+    }
+
+    function formatMountTypeLabel(value) {
+        if (!value) {
+            return '';
+        }
+        var normalized;
+        try {
+            normalized = value.toLocaleUpperCase('tr-TR');
+        } catch (err) {
+            normalized = value.toUpperCase();
+        }
+        switch (normalized) {
+            case 'DUVAR':
+                return 'Duvar';
+            case 'SEHPA':
+                return 'Sehpa';
+            case 'DİĞER':
+            case 'DIGER':
+                return 'Diğer';
+            default:
+                return value.trim();
+        }
+    }
+
+    function formatPriorityDisplay(priority) {
+        var normalized = normalizePriorityValue(priority);
+        switch (normalized) {
+            case 'YÜKSEK':
+                return 'Yüksek';
+            case 'ORTA':
+                return 'Orta';
+            case 'DÜŞÜK':
+                return 'Düşük';
+            default:
+                return normalized || '';
+        }
+    }
+
+    function getPriorityClass(priority) {
+        var normalized = normalizePriorityValue(priority);
+        switch (normalized) {
+            case 'YÜKSEK':
+                return 'text-rose-700';
+            case 'ORTA':
+                return 'text-amber-600';
+            case 'DÜŞÜK':
+                return 'text-emerald-600';
+            default:
+                return 'text-slate-600';
+        }
+    }
+
+    function setTableMessage(message) {
+        if (!tableBody) {
+            return;
+        }
+        tableBody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-sm text-slate-400">' + escapeHtml(message) + '</td></tr>';
+        tableBody.dataset.state = 'message';
+    }
+
+    function clearTableMessage() {
+        if (!tableBody || tableBody.dataset.state !== 'message') {
+            return;
+        }
+        tableBody.innerHTML = '';
+        delete tableBody.dataset.state;
+    }
+
+    function updateDateTime() {
+        if (!clockEl || !dateEl) {
+            return;
+        }
+        var now = new Date();
+        clockEl.textContent = now.toLocaleTimeString('tr-TR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        dateEl.textContent = now.toLocaleDateString('tr-TR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+
+    function updateRecordCount() {
+        if (!countEl || !tableBody) {
+            return;
+        }
+        countEl.textContent = tableBody.querySelectorAll('[data-record="true"]').length;
+    }
+
+    function updateDetailPanel(order) {
+        if (detailNameInput) {
+            detailNameInput.value = order && order.name ? order.name : '';
+        }
+        if (detailModelInput) {
+            detailModelInput.value = order && order.model ? order.model : '';
+        }
+        if (detailPhoneInput) {
+            detailPhoneInput.value = order && order.phone ? order.phone : '';
+        }
+        if (detailAddressInput) {
+            detailAddressInput.value = order && order.address ? order.address : '';
+        }
+        if (detailRnuBadge && detailRnuValue) {
+            if (order && order.rnu) {
+                detailRnuValue.textContent = order.rnu;
+                detailRnuBadge.classList.remove('hidden');
+            } else {
+                detailRnuValue.textContent = '';
+                detailRnuBadge.classList.add('hidden');
+            }
+        }
+        updateMediaMeta(order);
+    }
+
+    function updateMediaMeta(order) {
+        if (!detailMediaMeta) {
+            return;
+        }
+        var hasPhotos = order && Array.isArray(order.photos) && order.photos.length > 0;
+        if (!order || !order.montaj_completion) {
+            detailMediaMeta.textContent = '';
+            detailMediaMeta.classList.add('hidden');
+            if (detailDownloadButton) {
+                detailDownloadButton.disabled = !hasPhotos;
+                detailDownloadButton.classList.toggle('opacity-70', !hasPhotos);
+            }
+            return;
+        }
+        var parts = [];
+        var completion = order.montaj_completion || {};
+        var mountType = formatMountTypeLabel(completion.mount_type || order.mount_type || '');
+        var photoCount = hasPhotos ? order.photos.length : (completion.photo_count || 0);
+        var note = (completion.note || '').trim();
+        if (mountType) {
+            parts.push('Montaj: ' + mountType);
+        }
+        parts.push('Fotoğraf: ' + photoCount);
+        if (note) {
+            parts.push('Not: ' + note);
+        }
+        detailMediaMeta.textContent = '(' + parts.join(' • ') + ')';
+        detailMediaMeta.classList.remove('hidden');
+        if (detailDownloadButton) {
+            var hasPhotos = Array.isArray(order.photos) && order.photos.length > 0;
+            detailDownloadButton.disabled = !hasPhotos;
+            detailDownloadButton.classList.toggle('opacity-70', !hasPhotos);
+        }
+    }
+
+    function updateInvoiceButton(order) {
+        if (!openInvoiceBtn) {
+            return;
+        }
+        var hasInvoice = !!(order && order.invoice_uploaded);
+        var icon = hasInvoice ? '✅' : '🧾';
+        var label = hasInvoice ? 'Fatura Yüklendi' : 'Fatura Yükle';
+        openInvoiceBtn.innerHTML = '<span class="text-base">' + icon + '</span><span>' + label + '</span>';
+        openInvoiceBtn.classList.toggle('bg-white', !hasInvoice);
+        openInvoiceBtn.classList.toggle('bg-emerald-600', hasInvoice);
+        openInvoiceBtn.classList.toggle('text-white', hasInvoice);
+        openInvoiceBtn.classList.toggle('border-emerald-200', hasInvoice);
+        openInvoiceBtn.classList.toggle('border-rose-300', !hasInvoice);
+        openInvoiceBtn.classList.toggle('text-rose-600', !hasInvoice);
+        openInvoiceBtn.classList.toggle('hover:bg-rose-50', !hasInvoice);
+        openInvoiceBtn.classList.toggle('hover:bg-emerald-500', hasInvoice);
+    }
+
+    function buildInvoiceInfo(order) {
+        if (!order) {
+            return '';
+        }
+        var parts = [];
+        if (order.job_no) {
+            parts.push(order.job_no);
+        }
+        if (order.name) {
+            parts.push(order.name);
+        }
+        return parts.join(' • ');
+    }
+
+    function getInvoiceExtension(order) {
+        if (!order || !order.invoice_uploaded || !order.invoice_url) {
+            return '';
+        }
+        var filename = '';
+        if (order.invoice && order.invoice.original_name) {
+            filename = order.invoice.original_name;
+        } else {
+            filename = order.invoice_url.split('/').pop().split('?')[0];
+        }
+        var dotIndex = filename.lastIndexOf('.');
+        if (dotIndex === -1) {
+            return '';
+        }
+        return filename.substring(dotIndex + 1).toLowerCase();
+    }
+
+    function updateInvoicePreview(order) {
+        if (!invoicePreview) {
+            return;
+        }
+        invoicePreview.innerHTML = '';
+
+        var items = [];
+        if (order && order.invoice_uploaded && order.invoice_url) {
+            items.push({
+                type: 'invoice',
+                url: order.invoice_url,
+                original_name: order.invoice && order.invoice.original_name ? order.invoice.original_name : '',
+                order: order
+            });
+        }
+        if (order && Array.isArray(order.photos)) {
+            order.photos.forEach(function (photo) {
+                if (photo && photo.url) {
+                    items.push({
+                        type: 'photo',
+                        url: photo.url,
+                        original_name: photo.original_name || '',
+                        stored_name: photo.stored_name || ''
+                    });
+                }
+            });
+        }
+
+        if (!items.length) {
+            var span = document.createElement('span');
+            span.className = 'text-sm text-slate-500';
+            span.textContent = 'Medya bulunamadı.';
+            invoicePreview.appendChild(span);
+            return;
+        }
+
+        items.forEach(function (item) {
+            var isImage = false;
+            if (item.type === 'invoice') {
+                var ext = getInvoiceExtension(item.order);
+                isImage = IMAGE_EXTENSIONS.indexOf(ext) !== -1;
+            } else {
+                var url = item.url || '';
+                var dotIndex = url.lastIndexOf('.');
+                var extPhoto = dotIndex !== -1 ? url.substring(dotIndex + 1).toLowerCase() : '';
+                isImage = IMAGE_EXTENSIONS.indexOf(extPhoto) !== -1;
+            }
+
+            var thumbBtn = document.createElement('button');
+            thumbBtn.type = 'button';
+            thumbBtn.className = 'group inline-flex aspect-square w-[10%] min-w-[40px] items-center justify-center rounded border border-slate-200 bg-white transition hover:border-rose-300';
+            thumbBtn.setAttribute('aria-label', item.type === 'invoice' ? 'Faturayı aç' : 'Fotoğrafı aç');
+
+            if (isImage) {
+                var img = document.createElement('img');
+                img.src = item.url;
+                img.alt = item.original_name || (item.type === 'invoice' ? 'Fatura' : 'Fotoğraf');
+                img.className = 'max-h-full max-w-full object-contain rounded';
+                thumbBtn.appendChild(img);
+            } else {
+                var icon = document.createElement('span');
+                icon.textContent = item.type === 'invoice' ? '📄' : '🖼️';
+                icon.className = 'text-lg text-rose-500';
+                thumbBtn.appendChild(icon);
+            }
+
+            thumbBtn.addEventListener('click', function () {
+                if (item.type === 'invoice') {
+                    openInvoiceViewer(item.order);
+                } else {
+                    openPhotoViewer(item);
+                }
+            });
+
+            invoicePreview.appendChild(thumbBtn);
+        });
+    }
+
+    function handleUnauthorizedResponse(response) {
+        if (response && response.status === 401) {
+            window.location.href = '/login';
+            return true;
+        }
+        return false;
+    }
+
+    function clearRowHighlights() {
+        if (!tableBody) {
+            return;
+        }
+        tableBody.querySelectorAll('[data-record="true"]').forEach(function (row) {
+            row.classList.remove('bg-rose-100');
+        });
+    }
+
+    function handleRowSelect(order, rowElement) {
+        if (!order) {
+            selectedOrder = null;
+            selectedRowElement = null;
+            updateDetailPanel(null);
+            updateInvoiceButton(null);
+            updateInvoicePreview(null);
+            clearRowHighlights();
+            return;
+        }
+        selectedOrder = order || null;
+        selectedRowElement = rowElement || selectedRowElement;
+        if (selectedOrder) {
+            var cachedOrder = ordersCache[selectedOrder.job_no];
+            if (cachedOrder) {
+                selectedOrder = cachedOrder;
+            }
+            if (rowElement) {
+                rowElement.__orderData = selectedOrder;
+            }
+            if (typeof selectedOrder.invoice_uploaded === 'undefined') {
+                selectedOrder.invoice_uploaded = false;
+            } else {
+                selectedOrder.invoice_uploaded = !!selectedOrder.invoice_uploaded;
+            }
+            if (!selectedOrder.job_no && rowElement && rowElement.dataset.id) {
+                selectedOrder.job_no = rowElement.dataset.id;
+            }
+            if ((!selectedOrder.invoice_url || selectedOrder.invoice_url === '') && rowElement && rowElement.dataset.invoiceUrl) {
+                selectedOrder.invoice_url = rowElement.dataset.invoiceUrl;
+            }
+            if (rowElement && rowElement.dataset.invoiceName) {
+                selectedOrder.invoice = selectedOrder.invoice || {};
+                selectedOrder.invoice.original_name = rowElement.dataset.invoiceName;
+            }
+            if (!selectedOrder.priority && rowElement && rowElement.dataset.priority) {
+                selectedOrder.priority = normalizePriorityValue(rowElement.dataset.priority);
+            }
+            if (!selectedOrder.service && rowElement && rowElement.dataset.service) {
+                selectedOrder.service = rowElement.dataset.service;
+            }
+        }
+        var effectiveOrder = selectedOrder || order;
+        updateDetailPanel(effectiveOrder);
+        updateInvoiceButton(effectiveOrder);
+        updateInvoicePreview(effectiveOrder);
+        clearRowHighlights();
+        if (rowElement) {
+            rowElement.classList.add('bg-rose-100');
+            var checkbox = rowElement.querySelector('.order-checkbox');
+            if (checkbox) {
+                checkbox.checked = !!(selectedOrder && selectedOrder.invoice_uploaded);
+            }
+        }
+    }
+
+    function rowDblClickHandler(event) {
+        var row = event.currentTarget;
+        var order = row.__orderData || ordersCache[row.dataset.id] || {
+            job_no: row.dataset.id || '',
+            name: row.dataset.name || '',
+            model: row.dataset.model || '',
+            phone: row.dataset.phone || '',
+            address: row.dataset.address || '',
+            service: row.dataset.service || '',
+            rnu: row.dataset.rnu || '',
+            priority: row.dataset.priority || '',
+            invoice_uploaded: row.dataset.invoice === 'true',
+            invoice_url: row.dataset.invoiceUrl || '',
+            invoice: {
+                original_name: row.dataset.invoiceName || ''
+            },
+            montaj_completed: row.dataset.montajCompleted === 'true',
+            photos: []
+        };
+        handleRowSelect(order, row);
+    }
+
+    function bindRowEvents() {
+        if (!tableBody) {
+            return;
+        }
+        tableBody.querySelectorAll('[data-record="true"]').forEach(function (row) {
+            if (row.dataset.bound === 'true') {
+                return;
+            }
+            if (ordersCache[row.dataset.id]) {
+                row.__orderData = ordersCache[row.dataset.id];
+            }
+            row.addEventListener('dblclick', rowDblClickHandler);
+            row.dataset.bound = 'true';
+        });
+    }
+
+    function lockCheckboxInteractions() {
+        document.querySelectorAll('.order-checkbox').forEach(function (checkbox) {
+            if (checkbox.dataset.locked === 'true') {
+                return;
+            }
+            checkbox.tabIndex = -1;
+            checkbox.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            });
+            checkbox.addEventListener('keydown', function (event) {
+                event.preventDefault();
+            });
+            checkbox.dataset.locked = 'true';
+        });
+    }
+
+    function updateRowElement(rowElement, order) {
+        if (!rowElement || !order) {
+            return;
+        }
+        rowElement.dataset.name = order.name || '';
+        rowElement.dataset.model = order.model || '';
+        rowElement.dataset.phone = order.phone || '';
+        rowElement.dataset.address = order.address || '';
+        rowElement.dataset.service = order.service || '';
+        rowElement.dataset.rnu = order.rnu || '';
+        rowElement.dataset.priority = normalizePriorityValue(order.priority || '');
+        rowElement.dataset.invoice = order.invoice_uploaded ? 'true' : 'false';
+        rowElement.dataset.invoiceUrl = order.invoice_url || '';
+        rowElement.dataset.invoiceName = order.invoice && order.invoice.original_name ? order.invoice.original_name : '';
+        rowElement.dataset.montajCompleted = order.montaj_completed ? 'true' : 'false';
+        rowElement.__orderData = order;
+        ordersCache[order.job_no] = order;
+        if (order.montaj_completed) {
+            rowElement.classList.add('bg-emerald-100');
+        } else {
+            rowElement.classList.remove('bg-emerald-100');
+        }
+
+        var cells = rowElement.querySelectorAll('td');
+        if (cells.length >= 8) {
+            cells[2].textContent = formatPriorityDisplay(order.priority) || '';
+            cells[3].textContent = order.created_at_display || order.created_at || '';
+            cells[4].textContent = order.name || '';
+            cells[5].textContent = order.model || '';
+            cells[6].textContent = order.phone || '';
+            cells[7].textContent = order.service || '';
+        }
+        var checkbox = rowElement.querySelector('.order-checkbox');
+        if (checkbox) {
+            checkbox.checked = !!order.invoice_uploaded;
+        }
+        lockCheckboxInteractions();
+    }
+
+    function generateIsEmriNo() {
+        return 'TE-' + Math.random().toString(16).slice(2, 6).toUpperCase();
+    }
+
+    function renderRow(order, prepend) {
+        if (!tableBody || !order) {
+            return;
+        }
+        clearTableMessage();
+        var jobNo = escapeHtml(order.job_no || '');
+        var priorityValue = order.priority || 'DÜŞÜK';
+        var priorityDisplay = formatPriorityDisplay(priorityValue);
+        var priority = escapeHtml(priorityDisplay);
+        var createdAt = escapeHtml(order.created_at_display || order.created_at || '');
+        var name = escapeHtml(order.name || order.customer_name || '');
+        var model = escapeHtml(order.model || '');
+        var phone = escapeHtml(order.phone || '');
+        var service = escapeHtml(order.service || '');
+        var rnu = escapeHtml(order.rnu || '');
+        var address = escapeHtml(order.address || '');
+        var priorityClass = getPriorityClass(priorityValue);
+
+        var checkboxState = order.invoice_uploaded ? 'checked' : '';
+        var invoiceUrl = escapeHtml(order.invoice_url || '');
+        var invoiceName = escapeHtml((order.invoice && order.invoice.original_name) || '');
+        var montajClass = order.montaj_completed ? ' bg-emerald-100' : '';
+        var rowHtml = `
+            <tr class="hover:bg-rose-50/30 cursor-pointer${montajClass}" data-record="true" data-id="${jobNo}" data-name="${name}" data-model="${model}" data-phone="${phone}" data-address="${address}" data-rnu="${rnu}" data-service="${service}" data-priority="${normalizePriorityValue(priorityValue)}" data-invoice="${order.invoice_uploaded ? 'true' : 'false'}" data-invoice-url="${invoiceUrl}" data-invoice-name="${invoiceName}" data-montaj-completed="${order.montaj_completed ? 'true' : 'false'}">
+                <td class="px-4 py-3">
+                    <input type="checkbox" class="order-checkbox h-4 w-4 cursor-default rounded border-slate-300 text-sky-600 focus:ring-sky-500" style="accent-color:#2563eb;" ${checkboxState} />
+                </td>
+                <td class="px-4 py-3 font-semibold text-slate-800">${jobNo}</td>
+                <td class="px-4 py-3 font-medium ${priorityClass}">${priority}</td>
+                <td class="px-4 py-3 text-slate-500">${createdAt}</td>
+                <td class="px-4 py-3 font-medium text-slate-700">${name}</td>
+                <td class="px-4 py-3 text-slate-600">${model}</td>
+                <td class="px-4 py-3 text-slate-500">${phone}</td>
+                <td class="px-4 py-3 text-slate-600">${service}</td>
+            </tr>`;
+
+        var reference;
+        if (prepend) {
+            tableBody.insertAdjacentHTML('afterbegin', rowHtml);
+            reference = tableBody.firstElementChild;
+        } else {
+            tableBody.insertAdjacentHTML('beforeend', rowHtml);
+            reference = tableBody.lastElementChild;
+        }
+        if (reference) {
+            reference.__orderData = order;
+            if (order.montaj_completed) {
+                reference.classList.add('bg-emerald-100');
+            } else {
+                reference.classList.remove('bg-emerald-100');
+            }
+        }
+        ordersCache[order.job_no] = order;
+        lockCheckboxInteractions();
+    }
+
+    async function loadOrders() {
+        if (!tableBody) {
+            return;
+        }
+        setTableMessage('Kayıtlar yükleniyor...');
+        ordersCache = {};
+        try {
+            var response = await fetch('/api/orders');
+            if (handleUnauthorizedResponse(response)) {
+                return;
+            }
+            if (!response.ok) {
+                throw new Error('Sunucu hatası: ' + response.status);
+            }
+            var data = await response.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                setTableMessage('Kayıt bulunamadı.');
+                updateRecordCount();
+                handleRowSelect(null, null);
+                return;
+            }
+            clearTableMessage();
+            tableBody.innerHTML = '';
+            data.forEach(function (order) {
+                ordersCache[order.job_no] = order;
+                renderRow(order, false);
+            });
+            bindRowEvents();
+            updateRecordCount();
+            lockCheckboxInteractions();
+        } catch (error) {
+            console.error('Kayıtlar yüklenemedi', error);
+            setTableMessage('Kayıtlar yüklenemedi. Lütfen daha sonra tekrar deneyin.');
+            updateRecordCount();
+        }
+    }
+
+    function openCustomerModal() {
+        if (!customerModal || !customerForm) {
+            return;
+        }
+        customerForm.reset();
+        var isemri = generateIsEmriNo();
+        if (modalIsEmri) {
+            modalIsEmri.value = isemri;
+        }
+        if (modalPriority) {
+            modalPriority.value = 'Düşük';
+        }
+        if (modalService && modalService.options.length > 0) {
+            modalService.value = modalService.options[0].value;
+        }
+        customerModal.classList.remove('hidden');
+        customerModal.classList.add('flex');
+        if (modalName) {
+            setTimeout(function () {
+                modalName.focus();
+            }, 50);
+        }
+    }
+
+    function closeCustomerModal() {
+        if (!customerModal) {
+            return;
+        }
+        customerModal.classList.add('hidden');
+        customerModal.classList.remove('flex');
+        if (customerForm) {
+            customerForm.reset();
+        }
+    }
+
+    function openTechnicianModal() {
+        if (!technicianModal || !technicianForm) {
+            return;
+        }
+        technicianForm.reset();
+        if (technicianLevelSelect) {
+            technicianLevelSelect.value = '5';
+        }
+        technicianModal.classList.remove('hidden');
+        technicianModal.classList.add('flex');
+        if (technicianNameInput) {
+            setTimeout(function () {
+                technicianNameInput.focus();
+            }, 50);
+        }
+    }
+
+    function closeTechnicianModal() {
+        if (!technicianModal) {
+            return;
+        }
+        technicianModal.classList.add('hidden');
+        technicianModal.classList.remove('flex');
+        if (technicianForm) {
+            technicianForm.reset();
+        }
+    }
+
+    function openInvoiceModal() {
+        if (!openInvoiceBtn) {
+            return;
+        }
+        if (!selectedOrder || !selectedOrder.job_no) {
+            alert('Önce listeden bir iş seçin.');
+            return;
+        }
+        if (invoiceOrderInfo) {
+            var label = selectedOrder.job_no;
+            if (selectedOrder.name) {
+                label += ' • ' + selectedOrder.name;
+            }
+            invoiceOrderInfo.textContent = label;
+        }
+        if (invoiceFileInput) {
+            invoiceFileInput.value = '';
+        }
+        if (!invoiceModal) {
+            alert('Fatura yükleme alanı hazırlanıyor.');
+            return;
+        }
+        invoiceModal.classList.remove('hidden');
+        invoiceModal.classList.add('flex');
+    }
+
+    function closeInvoiceModal() {
+        if (!invoiceModal) {
+            return;
+        }
+        invoiceModal.classList.add('hidden');
+        invoiceModal.classList.remove('flex');
+        if (invoiceForm) {
+            invoiceForm.reset();
+        }
+    }
+
+    function openInvoiceViewer(order) {
+        if (!order || !order.invoice_uploaded || !order.invoice_url) {
+            alert('Fatura bulunamadı.');
+            return;
+        }
+        if (!invoiceViewerModal) {
+            window.open(order.invoice_url, '_blank');
+            return;
+        }
+        if (invoiceViewerInfo) {
+            var info = buildInvoiceInfo(order);
+            if (order.invoice && order.invoice.original_name) {
+                info = (info ? info + ' • ' : '') + order.invoice.original_name;
+            }
+            invoiceViewerInfo.textContent = info || 'Fatura önizleme';
+        }
+        if (invoiceViewerDownload) {
+            invoiceViewerDownload.href = order.invoice_url;
+            if (order.invoice && order.invoice.original_name) {
+                invoiceViewerDownload.download = order.invoice.original_name;
+            } else {
+                invoiceViewerDownload.removeAttribute('download');
+            }
+        }
+
+        var ext = getInvoiceExtension(order);
+        var isImage = IMAGE_EXTENSIONS.indexOf(ext) !== -1;
+        var content = '';
+        if (isImage) {
+            content = '<img src="' + order.invoice_url + '" alt="Fatura" class="max-h-[70vh] w-full object-contain rounded-lg" />';
+        } else if (ext === 'pdf') {
+            content = '<iframe src="' + order.invoice_url + '" class="h-[70vh] w-full rounded-lg" frameborder="0"></iframe>';
+        } else {
+            content = '<div class="p-6 text-sm text-slate-600">Bu dosya için önizleme oluşturulamadı. <a href="' + order.invoice_url + '" class="text-rose-600 underline" target="_blank" rel="noopener">Dosyayı indir</a>.</div>';
+        }
+
+        if (invoiceViewerContent) {
+            invoiceViewerContent.innerHTML = content;
+        }
+
+        invoiceViewerModal.classList.remove('hidden');
+        invoiceViewerModal.classList.add('flex');
+    }
+
+    function openPhotoViewer(photo) {
+        if (!photo || !photo.url) {
+            alert('Fotoğraf bulunamadı.');
+            return;
+        }
+        if (!invoiceViewerModal) {
+            window.open(photo.url, '_blank');
+            return;
+        }
+        if (invoiceViewerInfo) {
+            invoiceViewerInfo.textContent = photo.original_name || 'Fotoğraf';
+        }
+        if (invoiceViewerDownload) {
+            invoiceViewerDownload.href = photo.url;
+            if (photo.original_name) {
+                invoiceViewerDownload.download = photo.original_name;
+            } else {
+                invoiceViewerDownload.removeAttribute('download');
+            }
+        }
+        var isImage = true;
+        var url = photo.url || '';
+        var dotIndex = url.lastIndexOf('.');
+        var ext = dotIndex !== -1 ? url.substring(dotIndex + 1).toLowerCase() : '';
+        if (!ext || IMAGE_EXTENSIONS.indexOf(ext) === -1) {
+            isImage = false;
+        }
+        if (invoiceViewerContent) {
+            if (isImage) {
+                invoiceViewerContent.innerHTML = '<img src="' + photo.url + '" alt="Fotoğraf" class="max-h-[70vh] w-full object-contain rounded-lg" />';
+            } else if (ext === 'pdf') {
+                invoiceViewerContent.innerHTML = '<iframe src="' + photo.url + '" class="h-[70vh] w-full rounded-lg" frameborder="0"></iframe>';
+            } else {
+                invoiceViewerContent.innerHTML = '<div class="p-6 text-sm text-slate-600">Bu dosya için önizleme oluşturulamadı. <a href="' + photo.url + '" class="text-rose-600 underline" target="_blank" rel="noopener">Dosyayı indir</a>.</div>';
+            }
+        }
+        invoiceViewerModal.classList.remove('hidden');
+        invoiceViewerModal.classList.add('flex');
+    }
+
+    function closeInvoiceViewer() {
+        if (!invoiceViewerModal) {
+            return;
+        }
+        invoiceViewerModal.classList.add('hidden');
+        invoiceViewerModal.classList.remove('flex');
+        if (invoiceViewerContent) {
+            invoiceViewerContent.innerHTML = '';
+        }
+    }
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    loadOrders();
+
+    if (openCustomerModalBtn) {
+        openCustomerModalBtn.addEventListener('click', openCustomerModal);
+    }
+
+    if (openTechnicianModalBtn) {
+        openTechnicianModalBtn.addEventListener('click', openTechnicianModal);
+    }
+
+    customerCloseButtons.forEach(function (btn) {
+        btn.addEventListener('click', closeCustomerModal);
+    });
+
+    if (customerModalOverlay) {
+        customerModalOverlay.addEventListener('click', closeCustomerModal);
+    }
+
+    technicianCloseButtons.forEach(function (btn) {
+        btn.addEventListener('click', closeTechnicianModal);
+    });
+
+    if (technicianModalOverlay) {
+        technicianModalOverlay.addEventListener('click', closeTechnicianModal);
+    }
+
+    if (technicianUsernameInput) {
+        technicianUsernameInput.addEventListener('input', function () {
+            this.value = this.value.toUpperCase();
+        });
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            if (customerModal && !customerModal.classList.contains('hidden')) {
+                closeCustomerModal();
+            }
+            if (invoiceModal && !invoiceModal.classList.contains('hidden')) {
+                closeInvoiceModal();
+            }
+            if (technicianModal && !technicianModal.classList.contains('hidden')) {
+                closeTechnicianModal();
+            }
+        }
+    });
+
+    if (customerForm) {
+        customerForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            if (!tableBody) {
+                closeCustomerModal();
+                return;
+            }
+            var formData = new FormData(customerForm);
+            var payload = {
+                priority: formData.get('priority') || 'Düşük',
+                name: formData.get('name') || '',
+                model: formData.get('model') || '',
+                phone: formData.get('phone') || '',
+                service: formData.get('service') || '',
+                rnu: formData.get('rnu') || '',
+                address: formData.get('address') || ''
+            };
+
+            try {
+                var response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (handleUnauthorizedResponse(response)) {
+                    return;
+                }
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsedError = JSON.parse(errorText);
+                        if (parsedError && parsedError.message) {
+                            errorText = parsedError.message;
+                        }
+                    } catch (parseError) {
+                        // metin JSON formatında değilse olduğu gibi göster
+                    }
+                    throw new Error(errorText || 'Sunucu hatası');
+                }
+
+                var result = await response.json();
+                if (!result || !result.order) {
+                    throw new Error('Geçersiz yanıt alındı.');
+                }
+
+                ordersCache[result.order.job_no] = result.order;
+                renderRow(result.order, true);
+                bindRowEvents();
+                updateRecordCount();
+                var newRowElement = tableBody.querySelector('[data-record="true"]');
+                if (newRowElement) {
+                    newRowElement.dataset.invoice = result.order.invoice_uploaded ? 'true' : 'false';
+                    newRowElement.dataset.invoiceUrl = result.order.invoice_url || '';
+                    var newInvName = result.order.invoice && result.order.invoice.original_name ? result.order.invoice.original_name : '';
+                    newRowElement.dataset.invoiceName = newInvName;
+                }
+                handleRowSelect(result.order, newRowElement);
+                closeCustomerModal();
+            } catch (error) {
+                console.error('Kayıt kaydedilemedi', error);
+                alert('Kayıt kaydedilemedi: ' + error.message);
+            }
+        });
+    }
+
+    if (openInvoiceBtn) {
+        openInvoiceBtn.addEventListener('click', openInvoiceModal);
+    }
+
+    invoiceCloseButtons.forEach(function (btn) {
+        btn.addEventListener('click', closeInvoiceModal);
+    });
+
+    if (invoiceOverlay) {
+        invoiceOverlay.addEventListener('click', closeInvoiceModal);
+    }
+
+    invoiceViewerCloseButtons.forEach(function (btn) {
+        btn.addEventListener('click', closeInvoiceViewer);
+    });
+
+    if (invoiceViewerOverlay) {
+        invoiceViewerOverlay.addEventListener('click', closeInvoiceViewer);
+    }
+
+    if (technicianForm) {
+        technicianForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            var formData = new FormData(technicianForm);
+            var payload = {
+                name: (formData.get('name') || '').trim(),
+                username: (formData.get('username') || '').trim().toUpperCase(),
+                password: (formData.get('password') || '').trim(),
+                level: (formData.get('level') || '').trim()
+            };
+
+            if (!payload.name || !payload.username || !payload.password || !payload.level) {
+                alert('Lütfen tüm alanları doldurun.');
+                return;
+            }
+
+            payload.name = payload.name.toUpperCase();
+            payload.password = payload.password.toUpperCase();
+
+            try {
+                var response = await fetch('/api/technicians', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (handleUnauthorizedResponse(response)) {
+                    return;
+                }
+
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsedError = JSON.parse(errorText);
+                        if (parsedError && parsedError.message) {
+                            errorText = parsedError.message;
+                        }
+                    } catch (parseError) {
+                        // düz metin
+                    }
+                    throw new Error(errorText || 'Teknisyen kaydedilemedi.');
+                }
+
+                var result = await response.json();
+                if (!result || !result.technician) {
+                    throw new Error('Geçersiz yanıt alındı.');
+                }
+
+                alert('Teknisyen kaydedildi.');
+                closeTechnicianModal();
+            } catch (error) {
+                console.error('Teknisyen kaydedilemedi', error);
+                alert('Teknisyen kaydedilemedi: ' + error.message);
+            }
+        });
+    }
+
+    if (invoiceForm) {
+        invoiceForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            if (!selectedOrder || !selectedOrder.job_no) {
+                alert('Önce listeden bir iş seçin.');
+                return;
+            }
+            if (!invoiceFileInput || !invoiceFileInput.files.length) {
+                alert('Lütfen fatura dosyası seçin.');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('invoice', invoiceFileInput.files[0]);
+
+            try {
+                var response = await fetch('/api/orders/' + encodeURIComponent(selectedOrder.job_no) + '/invoice', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (handleUnauthorizedResponse(response)) {
+                    return;
+                }
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsedError = JSON.parse(errorText);
+                        if (parsedError && parsedError.message) {
+                            errorText = parsedError.message;
+                        }
+                    } catch (parseError) {
+                        // düz metin olarak bırak
+                    }
+                    throw new Error(errorText || 'Fatura yüklenemedi.');
+                }
+
+                var result = await response.json();
+                if (result && result.order) {
+                    var order = result.order;
+                    selectedOrder = order;
+                    var rowElement = null;
+                    if (tableBody) {
+                        var rows = tableBody.querySelectorAll('[data-record="true"]');
+                        rows.forEach(function (el) {
+                            if (!rowElement && el.dataset.id === order.job_no) {
+                                rowElement = el;
+                            }
+                        });
+                    }
+                    if (rowElement) {
+                        rowElement.dataset.invoice = order.invoice_uploaded ? 'true' : 'false';
+                        rowElement.dataset.invoiceUrl = order.invoice_url || '';
+                        var uploadedName = order.invoice && order.invoice.original_name ? order.invoice.original_name : '';
+                        rowElement.dataset.invoiceName = uploadedName;
+                        rowElement.__orderData = order;
+                    }
+                    ordersCache[order.job_no] = order;
+                    handleRowSelect(order, rowElement);
+                    alert('Fatura başarıyla yüklendi.');
+                    closeInvoiceModal();
+                }
+            } catch (error) {
+                console.error('Fatura yüklenemedi', error);
+                alert('Fatura yüklenemedi: ' + error.message);
+            }
+        });
+    }
+
+    if (detailSaveButton) {
+        detailSaveButton.addEventListener('click', async function () {
+            if (!selectedOrder || !selectedOrder.job_no) {
+                alert('Önce listeden bir iş seçin.');
+                return;
+            }
+            var payload = {
+                name: detailNameInput ? detailNameInput.value.trim() : '',
+                model: detailModelInput ? detailModelInput.value.trim() : '',
+                phone: detailPhoneInput ? detailPhoneInput.value.trim() : '',
+                address: detailAddressInput ? detailAddressInput.value.trim() : '',
+                priority: selectedOrder.priority || '',
+                service: selectedOrder.service || '',
+                rnu: selectedOrder.rnu || ''
+            };
+            try {
+                var response = await fetch('/api/orders/' + encodeURIComponent(selectedOrder.job_no), {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (handleUnauthorizedResponse(response)) {
+                    return;
+                }
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsedError = JSON.parse(errorText);
+                        if (parsedError && parsedError.message) {
+                            errorText = parsedError.message;
+                        }
+                    } catch (parseError) {
+                        // düz metin bırak
+                    }
+                    throw new Error(errorText || 'Güncelleme başarısız.');
+                }
+                var result = await response.json();
+                if (result && result.order) {
+                    selectedOrder = result.order;
+                    if (selectedRowElement) {
+                        updateRowElement(selectedRowElement, selectedOrder);
+                    }
+                    ordersCache[selectedOrder.job_no] = selectedOrder;
+                    handleRowSelect(selectedOrder, selectedRowElement);
+                    alert('Kayıt güncellendi.');
+                }
+            } catch (error) {
+                console.error('Kayıt güncellenemedi', error);
+                alert('Kayıt güncellenemedi: ' + error.message);
+            }
+        });
+    }
+
+    if (detailDeleteButton) {
+        detailDeleteButton.addEventListener('click', async function () {
+            if (!selectedOrder || !selectedOrder.job_no) {
+                alert('Önce listeden bir iş seçin.');
+                return;
+            }
+
+            var confirmation = window.confirm('Kaydı silmek istediğinize emin misiniz?');
+            if (!confirmation) {
+                return;
+            }
+
+            try {
+                var response = await fetch('/api/orders/' + encodeURIComponent(selectedOrder.job_no), {
+                    method: 'DELETE'
+                });
+
+                if (handleUnauthorizedResponse(response)) {
+                    return;
+                }
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsedError = JSON.parse(errorText);
+                        if (parsedError && parsedError.message) {
+                            errorText = parsedError.message;
+                        }
+                    } catch (parseError) {
+                        // cevap JSON değilse aynen göster
+                    }
+                    throw new Error(errorText || 'Kayıt silinemedi.');
+                }
+
+                var rowElement = selectedRowElement;
+                if (!rowElement && tableBody) {
+                    tableBody.querySelectorAll('[data-record="true"]').forEach(function (row) {
+                        if (!rowElement && row.dataset.id === selectedOrder.job_no) {
+                            rowElement = row;
+                        }
+                    });
+                }
+                if (rowElement && typeof rowElement.remove === 'function') {
+                    rowElement.remove();
+                }
+
+                if (selectedOrder && selectedOrder.job_no) {
+                    delete ordersCache[selectedOrder.job_no];
+                }
+
+                handleRowSelect(null, null);
+                updateRecordCount();
+
+                if (tableBody && !tableBody.querySelector('[data-record="true"]')) {
+                    setTableMessage('Kayıt bulunamadı.');
+                }
+
+                alert('Kayıt silindi.');
+            } catch (error) {
+                console.error('Kayıt silinemedi', error);
+                alert('Kayıt silinemedi: ' + error.message);
+            }
+        });
+    }
+
+    if (detailDownloadButton) {
+        detailDownloadButton.addEventListener('click', async function () {
+            if (detailDownloadButton.disabled) {
+                return;
+            }
+            if (!selectedOrder || !selectedOrder.job_no) {
+                alert('Önce listeden bir iş seçin.');
+                return;
+            }
+            if (!selectedOrder.photos || !selectedOrder.photos.length) {
+                alert('Bu kayıt için fotoğraf bulunmuyor.');
+                return;
+            }
+            var downloadUrl = '/api/orders/' + encodeURIComponent(selectedOrder.job_no) + '/photos/download';
+            try {
+                var response = await fetch(downloadUrl);
+                if (handleUnauthorizedResponse(response)) {
+                    return;
+                }
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsedError = JSON.parse(errorText);
+                        if (parsedError && parsedError.message) {
+                            errorText = parsedError.message;
+                        }
+                    } catch (parseError) {
+                        // düz metin
+                    }
+                    throw new Error(errorText || 'Dosyalar indirilemedi.');
+                }
+                var blob = await response.blob();
+                var contentDisposition = response.headers.get('Content-Disposition') || '';
+                var filenameMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+                var filename = (filenameMatch && (filenameMatch[1] || filenameMatch[2])) ? decodeURIComponent(filenameMatch[1] || filenameMatch[2]) : (selectedOrder.job_no + '-RESIMLER.zip');
+                var blobUrl = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Resimler indirilemedi', error);
+                alert('Resimler indirilemedi: ' + error.message);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

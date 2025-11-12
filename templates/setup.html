@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}İlk Kurulum{% endblock %}
+{% block content %}
+<div style="max-width:420px;margin:60px auto;padding:32px;border:1px solid #d0d5dd;border-radius:24px;font-family:'SF Pro Display','Helvetica Neue',Arial,sans-serif;">
+  <h1 style="font-size:24px;margin-bottom:8px;">İlk Admin Kaydı</h1>
+  <p style="font-size:14px;color:#5f6368;margin-bottom:24px;">Sistemi kullanmaya başlamadan önce yönetici hesabınızı oluşturun.</p>
+  {% if error %}
+  <div style="background:#fdecea;color:#b71c1c;padding:10px 14px;border-radius:16px;font-size:13px;margin-bottom:16px;">{{ error }}</div>
+  {% endif %}
+  <form method="post" style="display:flex;flex-direction:column;gap:16px;">
+    <label style="font-size:13px;color:#1f1f1f;display:flex;flex-direction:column;gap:6px;">
+      Ad Soyad
+      <input type="text" name="name" value="{{ last_name }}" required style="border:1px solid #ccd0d5;border-radius:999px;padding:10px 16px;font-size:14px;">
+    </label>
+    <label style="font-size:13px;color:#1f1f1f;display:flex;flex-direction:column;gap:6px;">
+      Kullanıcı Adı
+      <input type="text" name="username" value="{{ last_username }}" required style="border:1px solid #ccd0d5;border-radius:999px;padding:10px 16px;font-size:14px;">
+    </label>
+    <label style="font-size:13px;color:#1f1f1f;display:flex;flex-direction:column;gap:6px;">
+      Şifre
+      <input type="password" name="password" required style="border:1px solid #ccd0d5;border-radius:999px;padding:10px 16px;font-size:14px;">
+    </label>
+    <button type="submit" style="background:#0b57d0;color:white;border:none;border-radius:999px;padding:12px 18px;font-size:15px;font-weight:600;cursor:pointer;">Admin Oluştur</button>
+  </form>
+</div>
+{% endblock %}

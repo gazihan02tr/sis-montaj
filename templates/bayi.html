@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayi Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+    <div id="bayi-container" class="hidden">
+        <div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-4 py-12">
+            <header class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <h1 class="text-2xl font-semibold text-slate-800">Bayi Montaj Kaydı</h1>
+                <p class="mt-1 text-sm text-slate-500">Montaj için müşteri bilgilerini girin.</p>
+            </header>
+
+            <main class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <form id="bayi-form" class="grid gap-4 sm:grid-cols-2" novalidate enctype="multipart/form-data">
+                    <label class="flex flex-col gap-2 text-sm">
+                        <span class="font-medium text-slate-600">Müşteri Adı</span>
+                        <input name="name" type="text" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Ad Soyad" />
+                    </label>
+                    <label class="flex flex-col gap-2 text-sm">
+                        <span class="font-medium text-slate-600">Telefon</span>
+                        <input name="phone" type="tel" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="05xx xxx xx xx" />
+                    </label>
+                    <label class="flex flex-col gap-2 text-sm">
+                        <span class="font-medium text-slate-600">Model</span>
+                        <input name="model" type="text" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Ürün modeli" />
+                    </label>
+                    <label class="flex flex-col gap-2 text-sm">
+                        <span class="font-medium text-slate-600">Servis Tipi</span>
+                        <select name="service" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200">
+                            <option value="TV KURULUM">TV Kurulum</option>
+                            <option value="ROBOT KURULUM">Robot Kurulum</option>
+                        </select>
+                    </label>
+                    <label class="flex flex-col gap-2 text-sm sm:col-span-2">
+                        <span class="font-medium text-slate-600">Adres</span>
+                        <textarea name="address" rows="3" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Adres bilgisi"></textarea>
+                    </label>
+                    <label class="flex flex-col gap-2 text-sm sm:col-span-2">
+                        <span class="font-medium text-slate-600">Fatura</span>
+                        <input name="invoice" type="file" accept="image/*,application/pdf" required class="rounded-lg border border-dashed border-rose-300 bg-rose-50/40 px-3 py-4 text-xs text-rose-600 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                        <span class="text-[11px] text-slate-400">PDF, JPG veya PNG formatında yükleyin.</span>
+                    </label>
+                    <label class="flex flex-col gap-2 text-sm sm:col-span-2">
+                        <span class="font-medium text-slate-600">Not (Opsiyonel)</span>
+                        <textarea name="note" rows="3" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Ek bilgi"></textarea>
+                    </label>
+                    <div class="sm:col-span-2 flex justify-end">
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-rose-500">Kaydı Oluştur</button>
+                    </div>
+                </form>
+            </main>
+        </div>
+    </div>
+
+    <div id="password-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-4 py-6">
+        <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+            <h2 class="text-lg font-semibold text-slate-800">Bayi Girişi</h2>
+            <p class="mt-2 text-xs text-slate-500">Lütfen erişim şifresini girin.</p>
+            <input id="bayi-password" type="password" class="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200" placeholder="Şifre" />
+            <button id="bayi-login" class="mt-4 w-full rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500">Giriş</button>
+            <p id="bayi-error" class="mt-2 hidden text-xs text-rose-600"></p>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var PASSWORD = '30202TR';
+        var container = document.getElementById('bayi-container');
+        var modal = document.getElementById('password-modal');
+        var input = document.getElementById('bayi-password');
+        var button = document.getElementById('bayi-login');
+        var errorEl = document.getElementById('bayi-error');
+        var form = document.getElementById('bayi-form');
+
+        function unlock() {
+            modal.classList.add('hidden');
+            container.classList.remove('hidden');
+        }
+
+        function handleLogin() {
+            var value = (input.value || '').trim().toUpperCase();
+            if (value === PASSWORD) {
+                unlock();
+            } else {
+                errorEl.textContent = 'Şifre geçersiz. Tekrar deneyin.';
+                errorEl.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        button.addEventListener('click', handleLogin);
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleLogin();
+            }
+        });
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            var formData = new FormData(form);
+            var invoiceFile = formData.get('invoice');
+            if (!invoiceFile || !invoiceFile.name) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Eksik Bilgi',
+                    text: 'Lütfen fatura dosyası seçin.'
+                });
+                return;
+            }
+
+            try {
+                var response = await fetch('/bayi/orders', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    var errorText = await response.text();
+                    try {
+                        var parsed = JSON.parse(errorText);
+                        if (parsed && parsed.message) {
+                            errorText = parsed.message;
+                        }
+                    } catch (err) {}
+                    throw new Error(errorText || 'Kayıt oluşturulamadı');
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Kayıt oluşturuldu',
+                    text: 'Faturanız alındı. En kısa sürede sizinle iletişime geçilecektir.'
+                });
+                form.reset();
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'İşlem başarısız',
+                    text: error.message
+                });
+            }
+        });
+    });
+    </script>
+</body>
+</html>

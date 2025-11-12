@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% block title %}Montaj Kapama{% endblock %}
+{% block head %}
+    {{ super() }}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-slate-100 text-slate-900">
+    <div class="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-6">
+        <header class="flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-xl font-semibold text-slate-800">Montaj Kapama</h1>
+                <p class="text-xs text-slate-500">Kurulum iş emirlerini gözden geçirip kapatmadan önce bilgileri kontrol edin.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                    <span class="text-xs uppercase tracking-wide text-slate-400">Kayıt</span>
+                    <strong id="montaj-record-count" class="text-sm text-slate-700">{{ orders|length }}</strong>
+                </span>
+                <form action="{{ url_for('logout') }}" method="post">
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600">
+                        <span class="text-base">↩︎</span>
+                        <span>Çıkış Yap</span>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <div id="montaj-empty-state" class="rounded-2xl border border-dashed border-slate-200 bg-white/70 px-6 py-20 text-center text-sm text-slate-500 {% if orders %}hidden{% endif %}">
+            Şu anda görüntülenecek montaj kaydı yok.
+        </div>
+        <div id="montaj-list" class="flex flex-col gap-4 {% if not orders %}hidden{% endif %}">
+            {% for order in orders %}
+            {% set maps_url = 'https://www.google.com/maps/search/?api=1&query=' ~ order.address|urlencode %}
+            {% set tel_href = 'tel:' ~ order.phone|replace(' ', '') %}
+            {% set priority_class = 'border-rose-200 bg-rose-50 text-rose-700' if order.priority == 'YÜKSEK' else 'border-amber-200 bg-amber-50 text-amber-700' if order.priority == 'ORTA' else 'border-emerald-200 bg-emerald-50 text-emerald-700' %}
+            <article class="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md" data-order="true" data-job-no="{{ order.job_no }}" data-rnu="{{ order.rnu }}" data-name="{{ order.name }}" data-phone="{{ order.phone }}" data-address="{{ order.address }}" data-created="{{ order.created_at_display }}" data-invoice="{{ 'true' if order.invoice_uploaded else 'false' }}" data-invoice-url="{{ order.invoice_url }}" data-invoice-name="{{ order.invoice.original_name if order.invoice }}" data-priority="{{ order.priority }}">
+                <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <span class="text-xs font-medium text-slate-400">İşemri No</span>
+                        <div class="mt-1 flex items-center gap-2">
+                            <p class="text-base font-semibold text-slate-800">{{ order.job_no }}</p>
+                            <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold {{ priority_class }}">
+                                {{ order.priority }}
+                            </span>
+                        </div>
+                        {% if order.rnu %}
+                        <span class="mt-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600">
+                            <span class="text-[10px] uppercase tracking-wide text-slate-400">RNU</span>
+                            <span>{{ order.rnu }}</span>
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        <span class="font-medium text-slate-600">Eklenme Tarihi:</span>
+                        <span>{{ order.created_at_display }}</span>
+                    </div>
+                </header>
+                <div class="grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+                    <div class="rounded-xl bg-slate-50/80 px-4 py-3">
+                        <p class="text-xs font-medium text-slate-500">Müşteri</p>
+                        <p class="font-semibold text-slate-800">{{ order.name }}</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-50/80 px-4 py-3">
+                        <p class="text-xs font-medium text-slate-500">Telefon</p>
+                        <a href="{{ tel_href }}" class="inline-flex items-center gap-1 font-semibold text-rose-600 hover:text-rose-500">
+                            <span class="text-xs uppercase tracking-wide text-rose-400">TEL:</span>
+                            <span>{{ order.phone }}</span>
+                        </a>
+                    </div>
+                    <div class="md:col-span-2 rounded-xl bg-slate-50/80 px-4 py-3">
+                        <p class="text-xs font-medium text-slate-500">Adres</p>
+                        <a href="{{ maps_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 font-semibold text-slate-800 hover:text-rose-600">
+                            <span>{{ order.address }}</span>
+                            <span class="text-xs text-rose-500 underline">Haritada Aç</span>
+                        </a>
+                    </div>
+                </div>
+                <footer class="flex items-center justify-between gap-3">
+                    <span class="inline-flex items-center gap-2 rounded-full border {{ 'border-emerald-200 bg-emerald-50 text-emerald-700 cursor-pointer hover:border-emerald-300 hover:text-emerald-800' if order.invoice_uploaded else 'border-slate-200 bg-slate-100 text-slate-500' }} px-3 py-1 text-xs font-medium" data-invoice-badge>
+                        {% if order.invoice_uploaded %}
+                        <span class="text-base">🧾</span>
+                        <span>Fatura Var</span>
+                        {% else %}
+                        <span class="text-base">⏳</span>
+                        <span>Fatura Bekleniyor</span>
+                        {% endif %}
+                    </span>
+                    <button type="button" class="inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:bg-rose-500" data-complete-order data-job-no="{{ order.job_no }}">
+                        <span class="text-base">✅</span>
+                        <span>Kaydı Sonlandır</span>
+                    </button>
+                </footer>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="montaj-invoice-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 px-4 py-6 backdrop-blur-sm">
+    <div class="relative w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+        <button type="button" class="absolute right-4 top-4 text-slate-400 transition hover:text-rose-500" data-close-modal>✕</button>
+        <div>
+            <h2 class="text-lg font-semibold text-slate-800">Fatura Önizleme</h2>
+            <p id="montaj-invoice-info" class="text-xs text-slate-500"></p>
+        </div>
+        <div id="montaj-invoice-content" class="mt-4 max-h-[70vh] overflow-hidden rounded-xl border border-slate-200 bg-slate-50"></div>
+        <div class="mt-4 flex justify-end gap-3">
+            <a id="montaj-invoice-download" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-rose-300 hover:text-rose-600">İndir</a>
+            <button type="button" class="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-rose-500" data-close-modal>Tamam</button>
+        </div>
+    </div>
+</div>
+
+<div id="montaj-complete-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 px-4 py-6 backdrop-blur-sm">
+    <div class="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+        <button type="button" class="absolute right-4 top-4 text-slate-400 transition hover:text-rose-500" data-close-complete-modal>✕</button>
+        <form id="montaj-complete-form" class="space-y-5">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800">Kaydı Sonlandır</h2>
+                <p class="mt-1 text-xs text-slate-500"><span id="complete-job-no" class="font-semibold text-slate-700"></span> numaralı montaj için detayları seçin.</p>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="flex flex-col gap-2 text-sm">
+                    <span class="font-medium text-slate-600">Montaj Türü</span>
+                    <div class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-600">
+                            <input type="radio" name="mount_type" value="DUVAR" class="h-4 w-4 text-rose-600 focus:ring-rose-500" required>
+                            <span>Duvar</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-600">
+                            <input type="radio" name="mount_type" value="SEHPA" class="h-4 w-4 text-rose-600 focus:ring-rose-500" required>
+                            <span>Sehpa</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-600">
+                            <input type="radio" name="mount_type" value="DIGER" class="h-4 w-4 text-rose-600 focus:ring-rose-500" required>
+                            <span>Diğer</span>
+                        </label>
+                    </div>
+                </label>
+                <label class="flex flex-col gap-2 text-sm">
+                    <span class="font-medium text-slate-600">Toplu Resimler</span>
+                    <input type="file" name="photos" accept="image/*" multiple class="rounded-xl border border-dashed border-rose-200 bg-rose-50/60 px-4 py-3 text-xs text-rose-600 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300" />
+                    <span class="text-[11px] text-slate-400">Görseller şu an saklanmaz; kapama için referans olarak kullanın.</span>
+                </label>
+            </div>
+            <label class="flex flex-col gap-1 text-sm">
+                <span class="font-medium text-slate-600">Not</span>
+                <textarea name="note" rows="3" placeholder="Ek bilgi veya gözlem" class="rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-200"></textarea>
+            </label>
+            <div class="flex items-center justify-end gap-3">
+                <button type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-medium text-slate-500 transition hover:border-rose-300 hover:text-rose-600" data-close-complete-modal>Vazgeç</button>
+                <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-rose-600 px-5 py-2 text-xs font-semibold text-white shadow hover:bg-rose-500">
+                    <span class="text-base">✅</span>
+                    <span>Kaydı Kapat</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    window.montajRecords = {{ orders|tojson }};
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var invoiceModal = document.getElementById('montaj-invoice-modal');
+    var invoiceInfo = document.getElementById('montaj-invoice-info');
+    var invoiceContent = document.getElementById('montaj-invoice-content');
+    var invoiceDownload = document.getElementById('montaj-invoice-download');
+    var closeButtons = document.querySelectorAll('[data-close-modal]');
+    var listEl = document.getElementById('montaj-list');
+    var emptyStateEl = document.getElementById('montaj-empty-state');
+    var recordCountEl = document.getElementById('montaj-record-count');
+    var completeModal = document.getElementById('montaj-complete-modal');
+    var completeForm = document.getElementById('montaj-complete-form');
+    var completeJobNoText = document.getElementById('complete-job-no');
+    var completeCloseButtons = document.querySelectorAll('[data-close-complete-modal]');
+    var pendingCompletion = null;
+    var IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif'];
+
+    function normalizePhone(value) {
+        return (value || '').replace(/[^\d+]/g, '');
+    }
+
+    function handleUnauthorizedResponse(response) {
+        if (response && response.status === 401) {
+            window.location.href = '/login';
+            return true;
+        }
+        return false;
+    }
+
+    function updateRecordCount() {
+        if (recordCountEl) {
+            var count = listEl ? listEl.querySelectorAll('[data-order="true"]').length : 0;
+            recordCountEl.textContent = count;
+        }
+        if (listEl && emptyStateEl) {
+            var hasRecords = listEl.querySelector('[data-order="true"]');
+            if (hasRecords) {
+                listEl.classList.remove('hidden');
+                emptyStateEl.classList.add('hidden');
+            } else {
+                listEl.classList.add('hidden');
+                emptyStateEl.classList.remove('hidden');
+            }
+        }
+    }
+
+    document.querySelectorAll('[data-order="true"]').forEach(function (card) {
+        var phoneLink = card.querySelector('a[href^="tel:"]');
+        if (phoneLink) {
+            var phone = normalizePhone(card.dataset.phone);
+            if (phone) {
+                phoneLink.href = 'tel:' + phone;
+            }
+        }
+        var badge = card.querySelector('[data-invoice-badge]');
+        if (badge && card.dataset.invoice === 'true') {
+            badge.addEventListener('click', function () {
+                openInvoice(card.dataset);
+            });
+        }
+        var completeBtn = card.querySelector('[data-complete-order]');
+        if (completeBtn) {
+            completeBtn.addEventListener('click', function () {
+                openCompletionModal(card);
+            });
+        }
+    });
+
+    function openCompletionModal(card) {
+        pendingCompletion = {
+            jobNo: card.dataset.jobNo,
+            name: card.dataset.name,
+            card: card
+        };
+        if (completeJobNoText) {
+            completeJobNoText.textContent = pendingCompletion.jobNo + (pendingCompletion.name ? ' • ' + pendingCompletion.name : '');
+        }
+        if (completeForm) {
+            completeForm.reset();
+        }
+        if (completeModal) {
+            completeModal.classList.remove('hidden');
+            completeModal.classList.add('flex');
+        }
+    }
+
+    function closeCompletionModal() {
+        if (completeModal) {
+            completeModal.classList.add('hidden');
+            completeModal.classList.remove('flex');
+        }
+        if (completeForm) {
+            completeForm.reset();
+        }
+        pendingCompletion = null;
+    }
+
+    function openInvoice(dataset) {
+        if (!dataset || !dataset.invoiceUrl) {
+            alert('Fatura bulunamadı.');
+            return;
+        }
+        var parts = [];
+        if (dataset.jobNo) parts.push(dataset.jobNo);
+        if (dataset.name) parts.push(dataset.name);
+        if (dataset.invoiceName) parts.push(dataset.invoiceName);
+        invoiceInfo.textContent = parts.join(' • ') || 'Fatura';
+
+        invoiceDownload.href = dataset.invoiceUrl;
+        if (dataset.invoiceName) {
+            invoiceDownload.download = dataset.invoiceName;
+        } else {
+            invoiceDownload.removeAttribute('download');
+        }
+
+        var ext = '';
+        if (dataset.invoiceUrl.indexOf('.') !== -1) {
+            ext = dataset.invoiceUrl.split('.').pop().toLowerCase();
+        } else if (dataset.invoiceName && dataset.invoiceName.indexOf('.') !== -1) {
+            ext = dataset.invoiceName.split('.').pop().toLowerCase();
+        }
+
+        if (IMAGE_EXTENSIONS.indexOf(ext) !== -1) {
+            invoiceContent.innerHTML = '<img src="' + dataset.invoiceUrl + '" alt="Fatura" class="max-h-[70vh] w-full object-contain rounded-xl" />';
+        } else if (ext === 'pdf') {
+            invoiceContent.innerHTML = '<iframe src="' + dataset.invoiceUrl + '" class="h-[70vh] w-full rounded-xl" frameborder="0"></iframe>';
+        } else {
+            invoiceContent.innerHTML = '<div class="p-6 text-sm text-slate-600">Önizleme desteklenmiyor. <a href="' + dataset.invoiceUrl + '" target="_blank" rel="noopener" class="font-semibold text-rose-600 underline">Dosyayı indir</a>.</div>';
+        }
+
+        invoiceModal.classList.remove('hidden');
+        invoiceModal.classList.add('flex');
+    }
+
+    function closeModal() {
+        invoiceModal.classList.add('hidden');
+        invoiceModal.classList.remove('flex');
+        if (invoiceContent) {
+            invoiceContent.innerHTML = '';
+        }
+    }
+
+    closeButtons.forEach(function (btn) {
+        btn.addEventListener('click', closeModal);
+    });
+
+    if (invoiceModal) {
+        invoiceModal.addEventListener('click', function (event) {
+            if (event.target === invoiceModal) {
+                closeModal();
+            }
+        });
+    }
+
+    completeCloseButtons.forEach(function (btn) {
+        btn.addEventListener('click', closeCompletionModal);
+    });
+
+    if (completeModal) {
+        completeModal.addEventListener('click', function (event) {
+            if (event.target === completeModal) {
+                closeCompletionModal();
+            }
+        });
+    }
+
+    if (completeForm) {
+        completeForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            if (!pendingCompletion || !pendingCompletion.jobNo) {
+                alert('Sonlandırılacak kayıt seçilemedi.');
+                return;
+            }
+            var formData = new FormData(completeForm);
+            var uploadCount = formData.getAll('photos').filter(function (file) {
+                return file && file.name;
+            }).length;
+            if (!uploadCount) {
+                alert('Lütfen en az bir fotoğraf yükleyin.');
+                return;
+            }
+            formData.append('job_no', pendingCompletion.jobNo);
+            await completeOrder(pendingCompletion.jobNo, pendingCompletion.card, formData);
+        });
+    }
+
+    async function completeOrder(jobNo, cardEl, formData) {
+        if (!jobNo) {
+            alert('İşemri numarası bulunamadı.');
+            return;
+        }
+        try {
+            var response = await fetch('/api/orders/' + encodeURIComponent(jobNo) + '/complete', {
+                method: 'POST',
+                body: formData
+            });
+            if (handleUnauthorizedResponse(response)) {
+                closeCompletionModal();
+                return;
+            }
+            if (!response.ok) {
+                var errorText = await response.text();
+                try {
+                    var parsed = JSON.parse(errorText);
+                    if (parsed && parsed.message) {
+                        errorText = parsed.message;
+                    }
+                } catch (err) {
+                    // response was plain text
+                }
+                throw new Error(errorText || 'Kayıt sonlandırılamadı.');
+            }
+            var result = await response.json();
+            if (cardEl && cardEl.parentNode) {
+                cardEl.parentNode.removeChild(cardEl);
+            }
+            updateRecordCount();
+            var mountType = (formData.get('mount_type') || '').toString().toUpperCase();
+            var photoCount = formData.getAll('photos').filter(function (file) { return file && file.name; }).length;
+            var toast = 'Kayıt sonlandırıldı.';
+            if (mountType) {
+                toast += '\nMontaj türü: ' + mountType;
+            }
+            if (photoCount) {
+                toast += '\nFotoğraf sayısı: ' + photoCount;
+            }
+            closeCompletionModal();
+            alert(toast);
+        } catch (error) {
+            console.error('Kaydı sonlandırma hatası', error);
+            alert('Kayıt sonlandırılamadı: ' + error.message);
+        }
+    }
+
+    updateRecordCount();
+});
+</script>
+{% endblock %}

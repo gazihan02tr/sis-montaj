@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Fatura Yükle{% endblock %}
+{% block head %}
+    {{ super() }}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-slate-100 text-slate-900">
+    <div class="mx-auto flex min-h-screen max-w-xl items-center justify-center px-4 py-12">
+        <div class="w-full rounded-3xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
+            <div class="mb-6 text-center">
+                <h1 class="text-xl font-semibold text-slate-800">Fatura Yükleme</h1>
+                {% if order %}
+                <p class="mt-1 text-xs text-slate-500">İşemri: <span class="font-semibold text-slate-700">{{ order.job_no }}</span></p>
+                {% endif %}
+            </div>
+
+            {% if message %}
+            <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% if order %}
+            <div class="mb-6 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                <p><span class="font-semibold text-slate-700">Müşteri:</span> {{ order.name }}</p>
+                <p><span class="font-semibold text-slate-700">Model:</span> {{ order.model }}</p>
+                <p><span class="font-semibold text-slate-700">Telefon:</span> {{ order.phone }}</p>
+                <p><span class="font-semibold text-slate-700">Servis:</span> {{ order.service }}</p>
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
+                <label class="flex flex-col gap-2 text-sm">
+                    <span class="font-medium text-slate-600">Fatura Dosyası</span>
+                    <input type="file" name="invoice" accept="image/*,application/pdf" required class="rounded-xl border border-dashed border-rose-300 bg-rose-50/50 px-4 py-3 text-xs text-rose-600 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200" />
+                    <span class="text-[11px] text-slate-400">PDF, JPG veya PNG formatında yükleyebilirsiniz.</span>
+                </label>
+                <button type="submit" class="w-full rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-rose-500">Faturayı Yükle</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
